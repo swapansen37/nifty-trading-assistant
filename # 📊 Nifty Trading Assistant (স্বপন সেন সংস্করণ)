@@ -1,0 +1,36 @@
+import yfinance as yf
+import pandas as pd
+
+symbol = "^NSEI"  # Nifty50 | "^NSEBANK" or "^BSESN"
+
+data = yf.download(symbol, period="5d", interval="15m")
+
+# RSI গণনা
+delta = data['Close'].diff()
+gain = delta.where(delta > 0, 0)
+loss = -delta.where(delta < 0, 0)
+avg_gain = gain.rolling(14).mean()
+avg_loss = loss.rolling(14).mean()
+rs = avg_gain / avg_loss
+data['RSI'] = 100 - (100 / (1 + rs))
+
+# 20-period মুভিং অ্যাভারেজ
+data['MA20'] = data['Close'].rolling(20).mean()
+
+# সিগন্যাল লজিক
+def get_signal(row):
+    if row['RSI'] < 30 and row['Close'] > row['MA20']:
+        return "BUY"
+    elif row['RSI'] > 70 and row['Close'] < row['MA20']:
+        return "SELL"
+    else:
+        return "HOLD"
+
+data['Signal'] = data.apply(get_signal, axis=1)
+print("📢 Latest Signal:", data['Signal'].iloc[-1])
+yfinance
+pandas
+openpyxl
+
+
+
